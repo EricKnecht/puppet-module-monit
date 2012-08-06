@@ -10,7 +10,17 @@ class monit($ensure=present, $admin='', $interval=60) {
     ensure => $ensure,
   }
 
-  file { '/etc/monit/monitrc':
+  $monit_conf = $::operatingsystem ? {
+    /(?i)(centos|redhat|fedora|scientific|amazon)/ => '/etc/monit.conf',
+    default => '/etc/monit/monitrc',
+  }
+
+  $monit_dir = $::operatingsystem ? {
+    /(?i)(centos|redhat|fedora|scientific|amazon)/ => '/etc/monit.d',
+    default => '/etc/monit/conf.d',
+  }
+
+  file { $monit_conf:
     ensure  => $ensure,
     content => template('monit/monitrc.erb'),
     mode    => '0600',
@@ -34,9 +44,9 @@ class monit($ensure=present, $admin='', $interval=60) {
     enable      => $is_present,
     hasrestart  => $is_present,
     pattern     => $service_pattern,
-    subscribe   => File['/etc/monit/monitrc'],
+    subscribe   => File[$monit_conf],
     require     => [
-      File['/etc/monit/monitrc'],
+      File[$monit_conf],
       File['/etc/logrotate.d/monit']
     ],
   }
